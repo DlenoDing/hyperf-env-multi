@@ -1,4 +1,4 @@
-# hyperf-multi-env
+# hyperf-env-multi
 hyperf 框架多 env 文件支持
 就只是改了https://github.com/qbhy/hyperf-multi-env
 兼容hyperf2.1（因为自己急需使用，那边的提交了PR，不知道什么时候才能合并，只能自己打包了）
