@@ -19,6 +19,8 @@ use Hyperf\Event\Annotation\Listener;
 use Hyperf\Event\Contract\ListenerInterface;
 use Hyperf\Framework\Event\BootApplication;
 
+use function Hyperf\Support\env;
+
 /**
  * @Listener
  * Class MultiEnvListener
