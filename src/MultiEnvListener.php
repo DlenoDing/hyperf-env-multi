@@ -21,10 +21,7 @@ use Hyperf\Framework\Event\BootApplication;
 
 use function Hyperf\Support\env;
 
-/**
- * @Listener
- * Class MultiEnvListener
- */
+#[Listener]
 class MultiEnvListener implements ListenerInterface
 {
     public function listen(): array
