@@ -12,29 +12,14 @@ declare(strict_types=1);
 
 namespace Dleno\HyperfEnvMulti;
 
-use Dotenv\Dotenv;
-use Dotenv\Repository\RepositoryBuilder;
 use Hyperf\Config\ProviderConfig;
 use Symfony\Component\Finder\Finder;
-use Dotenv\Repository\Adapter;
 
 class ConfigFactory
 {
     public function merge($env)
     {
-        // Load env before config.
-        if (file_exists(BASE_PATH . '/.env.' . $env)) {
-            $repository = RepositoryBuilder::createWithNoAdapters()
-                ->addReader(
-                    Adapter\PutenvAdapter::class
-                )
-                ->addWriter(
-                    Adapter\PutenvAdapter::class
-                )
-                ->make();
-
-            Dotenv::create($repository, [BASE_PATH], '.env.' . $env)->load();
-        }
+        EnvLoader::load(BASE_PATH, is_string($env) ? $env : null);
 
         $configPath = BASE_PATH . '/config/';
         $config = $this->readConfig($configPath . 'config.php');
