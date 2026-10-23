@@ -20,6 +20,9 @@ use Hyperf\Context\ApplicationContext;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Di\Container;
 use Hyperf\Di\Definition\DefinitionSource;
+use Hyperf\Event\Annotation\Listener;
+use Hyperf\Event\EventDispatcher;
+use Hyperf\Event\ListenerProvider;
 use Hyperf\Framework\Event\BootApplication;
 use Hyperf\Config\ProviderConfig;
 use PHPUnit\Framework\Attributes\CoversNothing;
@@ -93,5 +96,38 @@ class EnvLoaderTest extends TestCase
         $this->assertSame('testing', $config->get('app_name'));
         $this->assertSame('testing', $config->get('demo.name'));
         $this->assertTrue($config->get('sub.nested.enabled'));
+    }
+
+    public function testListenerRunsBeforeOtherBootListenersAndKeepsTheirConfig(): void
+    {
+        $attrs = (new ReflectionClass(MultiEnvListener::class))->getAttributes(Listener::class);
+        $this->assertCount(1, $attrs);
+        $priority = $attrs[0]->newInstance()->priority;
+        $this->assertSame(PHP_INT_MAX, $priority);
+
+        $config = new Config(['app_name' => 'stale', 'exceptions' => ['handler' => ['http' => ['FromConfig']]]]);
+        $container = new Container(new DefinitionSource([ConfigInterface::class => fn () => $config]));
+        ApplicationContext::setContainer($container);
+        (new ReflectionClass(ProviderConfig::class))->setStaticPropertyValue('providerConfigs', ['from_provider' => true]);
+
+        //模拟 ExceptionHandlerListener:默认优先级，在启动阶段把注解注册的处理器写进配置。
+        //先注册它、后注册 MultiEnvListener(与注解监听器晚于配置监听器注册的真实顺序一致)，仅靠优先级决定先后。
+        $provider = new ListenerProvider();
+        $provider->on(BootApplication::class, static function () use ($config) {
+            $handlers   = $config->get('exceptions.handler.http', []);
+            $handlers[] = 'FromAnnotation';
+            $config->set('exceptions.handler.http', $handlers);
+        });
+        $provider->on(BootApplication::class, [new MultiEnvListener(), 'process'], $priority);
+
+        try {
+            EnvLoader::load(BASE_PATH);
+            (new EventDispatcher($provider))->dispatch(new BootApplication());
+        } finally {
+            ProviderConfig::clear();
+        }
+
+        $this->assertSame('testing', $config->get('app_name'));
+        $this->assertContains('FromAnnotation', (array) $config->get('exceptions.handler.http'));
     }
 }

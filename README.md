@@ -9,7 +9,7 @@ Hyperf 多环境 `.env` 加载组件。
 - 默认加载 `.env`。
 - 当 `APP_ENV` 有值时，额外加载 `.env.<APP_ENV>`。
 - `.env.<APP_ENV>` 中的同名变量会覆盖 `.env` 中的值。
-- `BootApplication` 阶段通过 `MultiEnvListener` 重新合并项目配置文件，让 `config/config.php`、`config/server.php`、`config/autoload/*.php` 读取到环境覆盖后的值。
+- `BootApplication` 阶段通过 `MultiEnvListener` 重新合并项目配置文件，让 `config/config.php`、`config/server.php`、`config/autoload/*.php` 读取到环境覆盖后的值。该监听器以最高优先级（`PHP_INT_MAX`）最先执行，之后其他启动监听器对配置的改写（如 `#[ExceptionHandler]` 注解处理器合并进 `exceptions.handler`）会保留。
 - 提供 `Dleno\HyperfEnvMulti\EnvLoader::load()`，供需要在 `BootApplication` 之前读取 `env()` 的包自行调用。
 - 不清理 `Hyperf\Config\ProviderConfig` 缓存，避免对全局配置构建流程产生不可控影响。
 
@@ -110,13 +110,13 @@ APP_ENV=local
 命令行临时指定环境：
 
 ```bash
-APP_ENV=production php bin/hyperf.php start
+APP_ENV=prod php bin/hyperf.php start
 ```
 
 Docker 指定环境：
 
 ```bash
-docker run --env APP_ENV=production -d -p 9501:9501 your-image
+docker run --env APP_ENV=prod -d -p 9504:9504 your-image
 ```
 
 PHPUnit 指定环境：
@@ -132,6 +132,7 @@ PHPUnit 指定环境：
 ## 注意事项
 
 - 推荐把公共配置放在 `.env`，环境差异配置放在 `.env.<APP_ENV>`。
+- 与 `dleno/common-core` 搭配时，正式环境的 `APP_ENV` 统一写 `prod`（对应 `.env.prod`）：common-core 只把 `prod`（或 `IS_PROD=true`）判定为正式环境。
 - `EnvLoader::load($basePath, $env)` 对同一个 `$basePath + $env` 做进程级幂等处理，避免重复加载。
 - 如果进程环境中已经存在 `APP_ENV`，会优先按当前进程环境值决定加载哪个 `.env.<APP_ENV>`。
 - 该组件不会调用 `ProviderConfig::clear()`；如果某个包需要早期读取环境变量，应由该包自行调用 `EnvLoader::load()`。
