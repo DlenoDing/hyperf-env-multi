@@ -21,9 +21,6 @@ class ConfigProvider
             ],
             'commands' => [
             ],
-            'listener' => [
-                MultiEnvListener::class,
-            ],
             'annotations' => [
                 'scan' => [
                     'paths' => [

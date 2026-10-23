@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Dleno\HyperfEnvMulti;
 
+use Hyperf\Collection\Arr;
 use Hyperf\Config\ProviderConfig;
 use Symfony\Component\Finder\Finder;
 
@@ -38,15 +39,20 @@ class ConfigFactory
         return is_array($config) ? $config : [];
     }
 
-    private function readPaths(array $paths)
+    private function readPaths(array $paths): array
     {
         $configs = [];
         $finder = new Finder();
         $finder->files()->in($paths)->name('*.php');
         foreach ($finder as $file) {
-            $configs[] = [
-                $file->getBasename('.php') => require $file->getRealPath(),
-            ];
+            // 与 Hyperf 3.2 ConfigFactory 一致:子目录映射为点分 key(autoload/a/b.php → a.b)
+            $config = [];
+            $key = implode('.', array_filter([
+                str_replace('/', '.', $file->getRelativePath()),
+                $file->getBasename('.php'),
+            ]));
+            Arr::set($config, $key, require $file->getRealPath());
+            $configs[] = $config;
         }
         return $configs;
     }

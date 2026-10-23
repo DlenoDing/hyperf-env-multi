@@ -141,6 +141,6 @@ PHPUnit 指定环境：
 推送 `v*` tag 后，GitHub Actions 会自动创建 GitHub Release。Composer 包版本仍由 Git tag 决定。
 
 ```bash
-git tag v3.1.0
-git push origin v3.1.0
+git tag v3.2.0
+git push origin v3.2.0
 ```
